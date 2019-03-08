@@ -10,14 +10,8 @@ type TrieberStack struct {
 	Top *Node
 }
 
-// Node struct that builds up TrieberStack
-type Node struct {
-	Value int
-	Next  *Node
-}
-
 // Push adds a node onto the top of the TrieberStack
-func (ts *TrieberStack) Push(value int) {
+func (ts *TrieberStack) Push(value Container) {
 	var oldHead *Node
 	newHead := &Node{value, nil}
 	for {
@@ -33,13 +27,13 @@ func (ts *TrieberStack) Push(value int) {
 }
 
 // Pop removes a node from the top of the TrieberStack and returns the node value
-func (ts *TrieberStack) Pop() int {
+func (ts *TrieberStack) Pop() Container {
 	var oldHead *Node
 	var newHead *Node
 	for {
 		oldHead = ts.Top
 		if oldHead == nil {
-			return -1
+			return nil
 		}
 		newHead = oldHead.Next
 		if atomic.CompareAndSwapPointer(
