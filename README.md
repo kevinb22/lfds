@@ -1,7 +1,7 @@
 # lfds
-Implementation of simple lock free data structures, because sanity and safety are overrated.
+Implementations of simple lock free data structures in golang and c, because sanity and safety are overrated.
 
-### Setup workspace
+### Setup workspace for go
 ```bash
 $ export GOPATH=`pwd`
 $ export GOBIN=$GOPATH/bin
