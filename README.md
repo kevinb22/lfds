@@ -3,7 +3,7 @@ Implementation of simple lock free data structures, because sanity and safety ar
 
 ### Setup workspace
 ```bash
-$ export GOPATH=/Users/Uday.Hiwarale/uday-gh/go_workspaces/main
+$ export GOPATH=`pwd`
 $ export GOBIN=$GOPATH/bin
 $ PATH=$PATH:$GOPATH:$GOBIN
 $ export PATH
