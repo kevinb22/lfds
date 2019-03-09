@@ -1,20 +1,12 @@
 #include "lf_map.h"
 
-#include <stdlib.h>
-
 #define HT_SIZE 97
 
-typedef struct _hm_entry
-{
-    char *key;
-    int val;
-} hm_entry;
-
-hm_entry **hash_table;
+hm_bucket *hash_table;
 
 int lf_map_create()
 {
-    hash_table = (hm_entry **)calloc(HT_SIZE, sizeof(hm_entry *));
+    hash_table = (hm_bucket *)calloc(HT_SIZE, sizeof(hm_bucket));
     if (!hash_table)
     {
         return -1;
@@ -33,13 +25,64 @@ void lf_map_put(hm_entry *entry)
     unsigned long index = hash_key % HT_SIZE;
 
     // TODO: Insert into hash table
-    if (!hash_table[index])
-    {
+    // atomic
+    hm_bucket bucket = hash_table[index];
+    // Look at the version...
+
+    lf_node *head = bucket.list;
+    lf_node *next = head;
+    while (next) {
+        if (hm_entry_key_equals(entry->key, ((hm_entry *) next->data)->key)) {
+
+            // check version number
+            ((hm_entry *) next->data)->val = entry->val;
+            return;
+        }
+        next = next->next;
     }
+
+    lf_node *new_head = (lf_node *) malloc(sizeof(lf_node));
+    new_head->data = entry;
+    new_head->next = head;
+    bucket.list = new_head;
 }
 
 int lf_map_get(hm_entry *entry)
 {
+    if (!entry) {
+        return -1;
+    }
 
-    return 0;
+    unsigned long hash_key = hash(entry->key);
+    unsigned long index = hash_key % HT_SIZE;
+
+    // atomic
+    hm_bucket bucket = hash_table[index];
+
+    lf_node *curr = bucket.list;
+
+    while (curr) {
+        if (hm_entry_key_equals(entry->key, ((hm_entry *) curr->data)->key)) {
+            // check version number
+            return curr->data;
+        }
+        curr = curr->next;
+    }
+
+    return -1;
+}
+
+void lf_map_destroy() {
+    hm_bucket *curr_bucket = hash_table;
+    int i;
+    for (i = 0; i < HT_SIZE; i++, curr_bucket++) {
+        lf_node *curr_node = curr_bucket->list;
+        while (curr_node) {
+            free(curr_node->data);
+            lf_node *old_node = curr_node;
+            curr_node = curr_node->next;
+            free (old_node);
+        }
+    }
+    free(hash_table);
 }
