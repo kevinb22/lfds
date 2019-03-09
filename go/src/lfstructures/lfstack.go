@@ -5,20 +5,20 @@ import (
 	"unsafe"
 )
 
-// TrieberStack implementation in golang
-type TrieberStack struct {
+// LFStack is a TrieberStack implementation in golang
+type LFStack struct {
 	Top *Node
 }
 
-// Push adds a node onto the top of the TrieberStack
-func (ts *TrieberStack) Push(value Container) {
+// Push adds a node onto the Top of the TrieberStack
+func (s *LFStack) Push(value Container) {
 	var oldHead *Node
 	newHead := &Node{value, nil}
 	for {
-		oldHead = ts.Top
+		oldHead = s.Top
 		newHead.Next = oldHead
 		if atomic.CompareAndSwapPointer(
-			(*unsafe.Pointer)(unsafe.Pointer(&ts.Top)),
+			(*unsafe.Pointer)(unsafe.Pointer(&s.Top)),
 			unsafe.Pointer(oldHead),
 			unsafe.Pointer(newHead)) {
 			break
@@ -26,18 +26,18 @@ func (ts *TrieberStack) Push(value Container) {
 	}
 }
 
-// Pop removes a node from the top of the TrieberStack and returns the node value
-func (ts *TrieberStack) Pop() Container {
+// Pop removes a node from the Top of the TrieberStack and returns the node value
+func (s *LFStack) Pop() Container {
 	var oldHead *Node
 	var newHead *Node
 	for {
-		oldHead = ts.Top
+		oldHead = s.Top
 		if oldHead == nil {
 			return nil
 		}
 		newHead = oldHead.Next
 		if atomic.CompareAndSwapPointer(
-			(*unsafe.Pointer)(unsafe.Pointer(&ts.Top)),
+			(*unsafe.Pointer)(unsafe.Pointer(&s.Top)),
 			unsafe.Pointer(oldHead),
 			unsafe.Pointer(newHead)) {
 			break
