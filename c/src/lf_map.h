@@ -2,6 +2,9 @@
 #include <stdlib.h>
 #include <stdbool.h>
 
+#ifndef LF_MAP
+#define LF_MAP
+
 typedef struct _hm_entry
 {
     unsigned char *key;
@@ -22,26 +25,16 @@ void lf_map_put(hm_entry *entry);
 
 int lf_map_get(hm_entry *entry);
 
-unsigned long
-hash(unsigned char *str)
-{
-    unsigned long hash = 5381;
-    int c;
+unsigned long hash(unsigned char *str);
 
-    while (c = *str++)
-        hash = ((hash << 5) + hash) + c; /* hash * 33 + c */
+bool hm_entry_key_equals(char *k1, char *k2);
 
-    return hash;
-}
+int lf_map_create();
 
-bool hm_entry_key_equals(hm_entry *e1, hm_entry *e2) {
-    if (!e1 && !e2) {
-        return true;
-    }
-    if (!e1 || !e2) {
-        return false;
-    }
+int lf_map_get(hm_entry *entry);
 
-    return strcmp(e1->key, e2->key) == 0;
-}
+void lf_map_put(hm_entry *entry);
 
+void lf_map_destroy();
+
+#endif
