@@ -7,7 +7,14 @@ import (
 
 // LFStack is a TrieberStack implementation in golang
 type LFStack struct {
-	Top *Node
+	Top *Node // Needs to be treated as Atomic reference
+}
+
+// NewLFStack returns a pointer to a new LFStack initialized on the heap
+func NewLFStack() *LFStack {
+	s := new(LFStack)
+	s.Top = nil
+	return s
 }
 
 // Push adds a node onto the Top of the TrieberStack
@@ -15,8 +22,12 @@ func (s *LFStack) Push(value Container) {
 	var oldHead *Node
 	newHead := &Node{value, nil}
 	for {
-		oldHead = s.Top
+		// Atomically load current head (oldHead = s.Top)
+		oldHead = (*Node) (atomic.LoadPointer(
+			(*unsafe.Pointer)(unsafe.Pointer(&s.Top))))
+		// Make local update for newHead
 		newHead.Next = oldHead
+		// If CAS works then break, else try again
 		if atomic.CompareAndSwapPointer(
 			(*unsafe.Pointer)(unsafe.Pointer(&s.Top)),
 			unsafe.Pointer(oldHead),
@@ -31,11 +42,17 @@ func (s *LFStack) Pop() Container {
 	var oldHead *Node
 	var newHead *Node
 	for {
-		oldHead = s.Top
+		// Atomically load current head, (oldHead = s.Top)
+		oldHead = (*Node) (atomic.LoadPointer(
+			(*unsafe.Pointer)(unsafe.Pointer(&s.Top))))
+		// If head null stack is empty
 		if oldHead == nil {
 			return nil
 		}
-		newHead = oldHead.Next
+		// Atomically load new head, (newHead = oldHead.Next)
+		newHead = (*Node) (atomic.LoadPointer(
+			(*unsafe.Pointer)(unsafe.Pointer(&s.Top.Next))))
+		// If CAS works then break, else try again
 		if atomic.CompareAndSwapPointer(
 			(*unsafe.Pointer)(unsafe.Pointer(&s.Top)),
 			unsafe.Pointer(oldHead),

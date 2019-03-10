@@ -5,52 +5,54 @@ import (
 	"unsafe"
 )
 
-// LFQueue is implementation of lock free queue in golang
-// It is limited by the fact that it is not possible to atomically update both the head and tail
-// therefore the base case of the queue has been removed, this queue must start with its Head and Tails
-// already formatted as a linked list for example:
-// 	testTail := Node{Container{2}, nil}
-//	testHead := Node{Container{1}, &testTail}
-//	s := LFQueue{&testHead, &testTail}
-// 	s.Add(...)
-//  s.Remove(...)
+// LFQueue is implementation of a one producer, one consumer lock free queue in golang
+// The producer owns all nodes before divider, the next pointer inside the last node,
+// and the ability to update first and last. The consumer owns everything else, including
+// the values in the nodes from divider onward, and the ability to update divider.
 type LFQueue struct {
-	Head *Node
-	Tail *Node
+	First, Divider, Last *Node 	// First is for produce user only, Divider and Last can be shared
+								// Divider and Last need to be treated as atomic variable
+}
+
+func NewLFQueue() *LFQueue {
+	q := new(LFQueue)
+	q.First = &Node{nil, nil}
+	q.Divider = q.First
+	q.Last = q.First
+	return q
 }
 
 // Add appends a value to the Tail of the linked list
-func (q *LFQueue) Add(value Container) {
-	var oldTail *Node
-	newTail := &Node{value, nil}
-	for {
-		oldTail = q.Tail
-		oldTail.Next = newTail
-		// atomically update the tail node
-		if atomic.CompareAndSwapPointer((*unsafe.Pointer)(unsafe.Pointer(&q.Tail)),
-			unsafe.Pointer(oldTail),
-			unsafe.Pointer(newTail)) {
-			break
-		}
+func (q *LFQueue) Produce(value Container) {
+	// Add new item
+	atomic.StorePointer(
+		(*unsafe.Pointer)(unsafe.Pointer(&q.Last.Next)),
+		unsafe.Pointer(&Node{value, nil}))
+	// Publish item
+	atomic.CompareAndSwapPointer(
+		(*unsafe.Pointer)(unsafe.Pointer(&q.Last)),
+		unsafe.Pointer(q.Last),
+		unsafe.Pointer(q.Last.Next))
+	// Trim unused nodes
+	for q.First != q.Divider {		
+		q.First = q.First.Next
 	}
 }
 
-//Remove pops from the Head of the linked list
-func (q *LFQueue) Remove() Container {
-	var oldHead *Node
-	var newHead *Node
-	for {
-		oldHead = q.Head
-		if oldHead == nil {
-			return nil
-		}
-		newHead = oldHead.Next
-		if atomic.CompareAndSwapPointer(
-			(*unsafe.Pointer)(unsafe.Pointer(&q.Head)),
-			unsafe.Pointer(oldHead),
-			unsafe.Pointer(newHead)) {
-			break
-		}
+// Remove pops from the Head of the linked list
+func (q *LFQueue) Consume() Container {
+	// If queue is not empty
+	if q.Divider != q.Last {
+		// Grab the next consumable result
+		result := atomic.LoadPointer(
+			(*unsafe.Pointer)(unsafe.Pointer(&q.Divider.Next)))
+		// Publish this update
+		atomic.CompareAndSwapPointer(
+			(*unsafe.Pointer)(unsafe.Pointer(&q.Divider)),
+			unsafe.Pointer(q.Divider),
+			unsafe.Pointer(q.Divider.Next))
+		// Return the payload of the result
+		return (*Node)(result).Value
 	}
-	return oldHead.Value
+	return nil
 }

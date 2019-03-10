@@ -6,36 +6,35 @@ import (
 )
 
 func TestStackSingleThread(t *testing.T) {
-	s := LFStack{}
-	s.Push(Container{1})
-	s.Push(Container{2})
+	s := NewLFStack()
+	c1 := Container{1}
+	c2 := Container{2}
+	s.Push(c1)
+	s.Push(c2)
 	res := s.Pop()
-	if res.Get() != 2 {
+	if res.Get() != c2.Get() {
 		t.Fatalf("s.Pop() = %d; want 2", res)
 	}
 	res = s.Pop()
-	if res.Get() != 1 {
+	if res.Get() != c1.Get() {
 		t.Fatalf("s.Pop() = %d; want 1", res)
 	}
-	fmt.Printf("  ... Passed\n")
+
 }
 
 func TestQueueSingleThread(t *testing.T) {
-	testTail := Node{Container{2}, nil}
-	testHead := Node{Container{1}, &testTail}
-	q := LFQueue{&testHead, &testTail}
-	q.Add(Container{3})
-	res := q.Remove()
-	if res.Get() != 1 {
-		t.Fatalf("s.Pop() = %d; want 1", res)
-	}
-	res = q.Remove()
-	if res.Get() != 2 {
+	q := NewLFQueue()
+	c1 := Container{1}
+	c2 := Container{2}
+	q.Produce(c1)
+	q.Produce(c2)
+	res := q.Consume()
+	if res.Get() != c1.Get() {
 		t.Fatalf("s.Pop() = %d; want 2", res)
 	}
-	res = q.Remove()
-	if res.Get() != 3 {
-		t.Fatalf("s.Pop() = %d; want 3", res)
+	res = q.Consume()
+	if res.Get() != c2.Get() {
+		t.Fatalf("s.Pop() = %d; want 2", res)
 	}
 	fmt.Printf("  ... Passed\n")
 }
