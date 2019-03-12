@@ -1,6 +1,9 @@
 # lfds
 Implementations of simple lock free data structures in golang and c, because sanity and safety are overrated.
 
+## Members
+Kevin Bi (kevinb22@uw.edu) and Anirban Biswas (anirban@uw.edu)
+
 ### Setup workspace for go
 ```bash
 $ export GOPATH=`pwd`
