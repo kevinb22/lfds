@@ -10,8 +10,9 @@ import (
 // and the ability to update first and last. The consumer owns everything else, including
 // the values in the nodes from divider onward, and the ability to update divider.
 type LFQueue struct {
-	First, Divider, Last *Node 	// First is for produce user only, Divider and Last can be shared
-								// Divider and Last need to be treated as atomic variable
+	First, Divider, Last *Node // First is for produce user only, Divider and Last can be shared
+	// Divider and Last need to be treated as atomic variable
+	atomicLock, locked, unlocked int32
 }
 
 func NewLFQueue() *LFQueue {
@@ -19,6 +20,9 @@ func NewLFQueue() *LFQueue {
 	q.First = &Node{nil, nil}
 	q.Divider = q.First
 	q.Last = q.First
+	q.atomicLock = int32(0)
+	q.locked = int32(1)
+	q.unlocked = int32(0)
 	return q
 }
 
@@ -34,15 +38,23 @@ func (q *LFQueue) Produce(value Container) {
 		unsafe.Pointer(q.Last),
 		unsafe.Pointer(q.Last.Next))
 	// Trim unused nodes
-	for q.First != q.Divider {		
+	for q.First != q.Divider {
 		q.First = q.First.Next
 	}
 }
 
 // Remove pops from the Head of the linked list
+// Not locking introduces a bug I was unable to figure out in time.
+// So I admitted defeat and must use a spinlock for now.
 func (q *LFQueue) Consume() Container {
+	q.lock()
+	defer q.unlock()
 	// If queue is not empty
-	if q.Divider != q.Last {
+	oldDivider := atomic.LoadPointer(
+		(*unsafe.Pointer)(unsafe.Pointer(&q.Divider)))
+	oldLast := atomic.LoadPointer(
+		(*unsafe.Pointer)(unsafe.Pointer(&q.Last)))
+	if oldDivider != oldLast {
 		// Grab the next consumable result
 		result := atomic.LoadPointer(
 			(*unsafe.Pointer)(unsafe.Pointer(&q.Divider.Next)))
@@ -55,4 +67,22 @@ func (q *LFQueue) Consume() Container {
 		return (*Node)(result).Value
 	}
 	return nil
+}
+
+// Code below adopted from https://medium.com/@tylerneely/fear-and-loathing-in-lock-free-programming-7158b1cdd50c
+func (q *LFQueue) lock() {
+	pointer := &q.atomicLock
+	old := q.unlocked
+	new := q.locked
+	for {
+		// spin until we successfully change the
+		// atomicLock from unlocked to locked
+		if atomic.CompareAndSwapInt32(pointer, old, new) {
+			return
+		}
+	}
+}
+
+func (q *LFQueue) unlock() {
+	atomic.StoreInt32(&q.atomicLock, q.unlocked)
 }

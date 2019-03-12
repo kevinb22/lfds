@@ -2,6 +2,7 @@ package lfstructures
 
 import (
 	"fmt"
+	"sync"
 	"testing"
 )
 
@@ -19,7 +20,26 @@ func TestStackSingleThread(t *testing.T) {
 	if res.Get() != c1.Get() {
 		t.Fatalf("s.Pop() = %d; want 1", res)
 	}
+}
 
+func threadStackRoutine(s *LFStack, wg *sync.WaitGroup) {
+	c1 := Container{1}
+	s.Push(c1)
+	s.Pop()
+	wg.Done()
+}
+
+func TestStackMultiThread(t *testing.T) {
+	s := NewLFStack()
+	var wg sync.WaitGroup
+	wg.Add(10)
+	for i := 0; i < 10; i++ {
+		go threadStackRoutine(s, &wg)
+	}
+	wg.Wait()
+	if s.Top != nil {
+		t.Fatalf("s.Top = %v; want nil", s.Top)
+	}
 }
 
 func TestQueueSingleThread(t *testing.T) {
@@ -37,4 +57,31 @@ func TestQueueSingleThread(t *testing.T) {
 		t.Fatalf("s.Pop() = %d; want 2", res)
 	}
 	fmt.Printf("  ... Passed\n")
+}
+
+func threadQueueProduceRoutine(s *LFQueue, wg *sync.WaitGroup) {
+	c1 := Container{1}
+	s.Produce(c1)
+	wg.Done()
+}
+func threadQueueConsumeRoutine(s *LFQueue, wg *sync.WaitGroup) {
+	s.Consume()
+	wg.Done()
+}
+
+func TestQueueMultiThread(t *testing.T) {
+	q := NewLFQueue()
+	var wg sync.WaitGroup
+	wg.Add(20)
+	for i := 0; i < 10; i++ {
+		go threadQueueProduceRoutine(q, &wg)
+		go threadQueueConsumeRoutine(q, &wg)
+	}
+	wg.Wait()
+	res := (q.First == q.Divider) || (q.Divider == q.Last)
+	if !res {
+		t.Fatalf("q.First = %v; q.Divider = %v; q.Last = %v; two of the three should be equal", q.First, q.Divider, q.Last)
+	}
+	fmt.Printf("  ... Passed\n")
+	//fmt.Printf("%v %v %v\n", q.First, q.Divider, q.Last)
 }
