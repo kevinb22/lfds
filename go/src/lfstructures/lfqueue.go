@@ -47,8 +47,6 @@ func (q *LFQueue) Produce(value Container) {
 // Not locking introduces a bug I was unable to figure out in time.
 // So I admitted defeat and must use a spinlock for now.
 func (q *LFQueue) Consume() Container {
-	q.lock()
-	defer q.unlock()
 	// If queue is not empty
 	oldDivider := atomic.LoadPointer(
 		(*unsafe.Pointer)(unsafe.Pointer(&q.Divider)))
@@ -67,22 +65,4 @@ func (q *LFQueue) Consume() Container {
 		return (*Node)(result).Value
 	}
 	return nil
-}
-
-// Code below adopted from https://medium.com/@tylerneely/fear-and-loathing-in-lock-free-programming-7158b1cdd50c
-func (q *LFQueue) lock() {
-	pointer := &q.atomicLock
-	old := q.unlocked
-	new := q.locked
-	for {
-		// spin until we successfully change the
-		// atomicLock from unlocked to locked
-		if atomic.CompareAndSwapInt32(pointer, old, new) {
-			return
-		}
-	}
-}
-
-func (q *LFQueue) unlock() {
-	atomic.StoreInt32(&q.atomicLock, q.unlocked)
 }
