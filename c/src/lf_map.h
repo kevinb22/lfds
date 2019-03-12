@@ -1,12 +1,11 @@
-#include <string.h>
-#include <stdlib.h>
 #include <stdbool.h>
+#include <stdlib.h>
+#include <string.h>
 
 #ifndef LF_MAP
 #define LF_MAP
 
-typedef struct _hm_entry
-{
+typedef struct _hm_entry {
     unsigned char *key;
     int val;
 } hm_entry;
@@ -17,6 +16,7 @@ typedef struct _lf_node {
 } lf_node;
 
 typedef struct _hm_bucket {
+    int spin_flag;
     int version;
     lf_node *list;
 } hm_bucket;
