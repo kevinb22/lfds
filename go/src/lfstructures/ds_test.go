@@ -7,6 +7,7 @@ import (
 )
 
 func TestStackSingleThread(t *testing.T) {
+	fmt.Printf("Start TestStackSingleThread\n")
 	s := NewLFStack()
 	c1 := Container{1}
 	c2 := Container{2}
@@ -20,6 +21,7 @@ func TestStackSingleThread(t *testing.T) {
 	if res.Get() != c1.Get() {
 		t.Fatalf("s.Pop() = %d; want 1", res)
 	}
+	fmt.Printf("  ... Passed\n")
 }
 
 func threadStackRoutine(s *LFStack, wg *sync.WaitGroup) {
@@ -30,6 +32,7 @@ func threadStackRoutine(s *LFStack, wg *sync.WaitGroup) {
 }
 
 func TestStackMultiThread(t *testing.T) {
+	fmt.Printf("Start TestStackMultiThread\n")
 	s := NewLFStack()
 	var wg sync.WaitGroup
 	wg.Add(10)
@@ -40,9 +43,11 @@ func TestStackMultiThread(t *testing.T) {
 	if s.Top != nil {
 		t.Fatalf("s.Top = %v; want nil", s.Top)
 	}
+	fmt.Printf("  ... Passed\n")
 }
 
 func TestQueueSingleThread(t *testing.T) {
+	fmt.Printf("Start TestQueueSingleThread\n")
 	q := NewLFQueue()
 	c1 := Container{1}
 	c2 := Container{2}
@@ -75,6 +80,7 @@ func threadQueueConsumeRoutine(s *LFQueue, wg *sync.WaitGroup) {
 }
 
 func TestQueueMultiThread(t *testing.T) {
+	fmt.Printf("Start TestQueueMultiThread\n")
 	q := NewLFQueue()
 	var wg sync.WaitGroup
 	wg.Add(2)

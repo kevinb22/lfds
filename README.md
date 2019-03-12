@@ -24,7 +24,7 @@ $ PATH=$PATH:$GOPATH:$GOBIN
 $ export PATH
 ```
 #### Run go tests
-To test the go code navigate to the lfstructures directory and run the following command:
+To test the go code navigate to the `go/src/lfstructures` directory make sure your $GOPATH variable is set and run the following command:
 ```bash
 $ go test
 ```
