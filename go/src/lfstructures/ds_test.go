@@ -60,23 +60,26 @@ func TestQueueSingleThread(t *testing.T) {
 }
 
 func threadQueueProduceRoutine(s *LFQueue, wg *sync.WaitGroup) {
-	c1 := Container{1}
-	s.Produce(c1)
+	for i := 0; i < 10; i++ {
+		c1 := Container{1}
+		s.Produce(c1)
+	}
+
 	wg.Done()
 }
 func threadQueueConsumeRoutine(s *LFQueue, wg *sync.WaitGroup) {
-	s.Consume()
+	for i := 0; i < 10; i++ {
+		s.Consume()
+	}
 	wg.Done()
 }
 
 func TestQueueMultiThread(t *testing.T) {
 	q := NewLFQueue()
 	var wg sync.WaitGroup
-	wg.Add(20)
-	for i := 0; i < 10; i++ {
-		go threadQueueProduceRoutine(q, &wg)
-		go threadQueueConsumeRoutine(q, &wg)
-	}
+	wg.Add(2)
+	go threadQueueProduceRoutine(q, &wg)
+	go threadQueueConsumeRoutine(q, &wg)
 	wg.Wait()
 	res := (q.First == q.Divider) || (q.Divider == q.Last)
 	if !res {
