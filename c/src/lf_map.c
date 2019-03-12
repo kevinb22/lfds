@@ -1,5 +1,4 @@
 #include "lf_map.h"
-#include <stdatomic.h>
 #include <stdio.h>
 
 #define HT_SIZE 97
@@ -25,30 +24,18 @@ void lf_map_put(hm_entry *entry) {
     }
     int version_old;
     unsigned long hash_key = hash(entry->key);
-    // printf("PUT: key: %s, hash_val: %lu\n", entry->key, hash_key);
 
     unsigned long index = hash_key % HT_SIZE;
 
-    // TODO: Insert into hash table
-    // atomic
     hm_bucket *bucket = &hash_table[index];
-    // Look at the version...
-    // int version_old = // atomic read. If -1, fail
 
 LOOP:
     version_old = bucket->version;
-    // if (version_old == 0) {
-    //     goto LOOP;
-    // }
 
     lf_node *head = bucket->list;
     lf_node *next = head;
     while (next) {
         if (hm_entry_key_equals(entry->key, ((hm_entry *)next->data)->key)) {
-            // check version number
-            // if (bucket->version == 0) {
-            //     goto LOOP;
-            // }
             if (!__sync_bool_compare_and_swap(&bucket->spin_flag, 0, 1)) {
                 goto LOOP;
             }
@@ -101,10 +88,8 @@ int lf_map_get(hm_entry *entry) {
     int version_old;
     int version_new;
     unsigned long hash_key = hash(entry->key);
-    // printf("GET: key: %s, hash_val: %lu\n", entry->key, hash_key);
     unsigned long index = hash_key % HT_SIZE;
 
-    // atomic
     hm_bucket *bucket = &hash_table[index];
 
 LOOP:
@@ -118,7 +103,6 @@ LOOP:
             goto LOOP;
         }
         if (hm_entry_key_equals(entry->key, ((hm_entry *)curr->data)->key)) {
-            // check version number
             return ((hm_entry *)curr->data)->val;
         }
         curr = curr->next;
