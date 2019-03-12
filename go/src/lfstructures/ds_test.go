@@ -86,5 +86,4 @@ func TestQueueMultiThread(t *testing.T) {
 		t.Fatalf("q.First = %v; q.Divider = %v; q.Last = %v; two of the three should be equal", q.First, q.Divider, q.Last)
 	}
 	fmt.Printf("  ... Passed\n")
-	//fmt.Printf("%v %v %v\n", q.First, q.Divider, q.Last)
 }

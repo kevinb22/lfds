@@ -44,8 +44,6 @@ func (q *LFQueue) Produce(value Container) {
 }
 
 // Remove pops from the Head of the linked list
-// Not locking introduces a bug I was unable to figure out in time.
-// So I admitted defeat and must use a spinlock for now.
 func (q *LFQueue) Consume() Container {
 	// If queue is not empty
 	oldDivider := atomic.LoadPointer(
