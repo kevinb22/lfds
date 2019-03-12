@@ -12,7 +12,6 @@ import (
 type LFQueue struct {
 	First, Divider, Last *Node // First is for produce user only, Divider and Last can be shared
 	// Divider and Last need to be treated as atomic variable
-	atomicLock, locked, unlocked int32
 }
 
 func NewLFQueue() *LFQueue {
@@ -20,9 +19,6 @@ func NewLFQueue() *LFQueue {
 	q.First = &Node{nil, nil}
 	q.Divider = q.First
 	q.Last = q.First
-	q.atomicLock = int32(0)
-	q.locked = int32(1)
-	q.unlocked = int32(0)
 	return q
 }
 
